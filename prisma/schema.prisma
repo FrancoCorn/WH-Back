@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "darwin-arm64"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Supermarket {
+  id        Int                      @id @default(autoincrement())
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  schedules SupermarketSchedule[]
+  products  ProductsToSupermarkets[]
+  vertices  SupermarketVertices[]    @relation(name: "supermarket")
+
+  entrance_vertex   SupermarketVertices? @relation(fields: [entranceId], references: [id], name: "entrance_vertex")
+  entranceId Int?                 @unique
+
+  checkout_vertex SupermarketVertices? @relation(fields: [checkoutId], references: [id], name: "checkout_vertex")
+  checkoutId Int?                 @unique
+
+}
+
+model SupermarketSchedule {
+  id            Int         @id @default(autoincrement())
+  supermarket   Supermarket @relation(fields: [supermarketId], references: [id])
+  supermarketId Int
+  day           Int
+  open          Int
+  close         Int
+}
+
+model SupermarketVertices {
+  id            Int         @id @default(autoincrement())
+  supermarket   Supermarket @relation(fields: [supermarketId], references: [id], name: "supermarket")
+  supermarketId Int
+
+  supermarket_entrance Supermarket? @relation(name: "entrance_vertex")
+  entranceId    Int?
+
+  supermarket_checkout Supermarket? @relation(name: "checkout_vertex")
+  checkoutId    Int?
+
+  location_x Float
+  location_y Float
+
+  paths_from SupermarketPaths[] @relation(name: "vertex_from")
+  paths_to   SupermarketPaths[] @relation(name: "vertex_to")
+}
+
+model SupermarketPaths {
+  vertex_from  SupermarketVertices @relation(fields: [vertexIdFrom], references: [id], name: "vertex_from", onDelete: Cascade)
+  vertexIdFrom Int
+  vertex_to    SupermarketVertices @relation(fields: [vertexIdTo], references: [id], name: "vertex_to", onDelete: Cascade)
+  vertexIdTo   Int
+
+  @@id([vertexIdFrom, vertexIdTo])
+}
+
+model Product {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String
+  image       String
+
+  supermarkets ProductsToSupermarkets[]
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  promos Promo[]
+}
+
+model ProductsToSupermarkets {
+  supermarket   Supermarket @relation(fields: [supermarketId], references: [id])
+  supermarketId Int
+  product       Product     @relation(fields: [productId], references: [id])
+  productId     Int
+  stock         Int
+  price         Float
+  location_x    Float
+  location_y    Float
+
+  @@id([supermarketId, productId])
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model Promo {
+  id          Int      @id @default(autoincrement())
+  price       Float
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   Int
+}

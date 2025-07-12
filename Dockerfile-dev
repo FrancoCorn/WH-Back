@@ -1,0 +1,8 @@
+FROM node:22
+
+ENV NODE_ENV=development
+
+USER node
+WORKDIR /app
+
+CMD ["npm", "run", "_docker:start:dev"]

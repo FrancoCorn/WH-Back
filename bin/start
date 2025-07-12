@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Start database and app, and attach console to app
+docker compose up -d && docker compose up app
